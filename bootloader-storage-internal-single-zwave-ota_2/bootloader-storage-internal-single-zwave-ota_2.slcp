@@ -1,0 +1,76 @@
+# Silicon Labs Project Configuration Tools: slcp, v0, Component selection file.
+project_name: bootloader-storage-internal-single-zwave-ota_2
+label: bootloader-storage-internal-single-zwave-ota_2
+description: |
+  This sample configuration of the Gecko bootloader configures the bootloader  to use the internal main flash to store firmware update images. The storage  configuration is set up to store a single firmware update image at a time,  in a single storage slot.
+category: Z-Wave|Bootloaders
+filter:
+- name: Device Type
+  value: [SoC]
+- name: MCU
+  value: [Bootloader]
+- name: Project Difficulty
+  value: [Advanced]
+- name: Wireless Technology
+  value: [Z-Wave]
+package: bootloader
+quality: production
+tag: [prebuilt_demo]
+sdk: {id: simplicity_sdk, version: 2025.6.3}
+toolchain_settings: []
+component:
+- {id: EFR32ZG23B020F512IM48}
+- {id: bootloader_aes_sha_ecdsa}
+- {id: bootloader_app_upgrade_version}
+- {id: bootloader_common_storage}
+- {id: bootloader_compression_lzma}
+- {id: bootloader_core}
+- {id: bootloader_crc}
+- {id: bootloader_image_parser}
+- {id: bootloader_internal_storage}
+- {id: bootloader_storage_slots}
+- {id: bootloader_token_management}
+- {id: brd4002a}
+- {id: brd4210a}
+config_file:
+- {path: config/sample_keys/sample_encrypt.key, directory: sample_keys}
+- {path: config/sample_keys/sample_sign.key, directory: sample_keys}
+requires:
+- {name: bootloader_compression_lzma}
+configuration:
+- {name: BOOTLOADER_ENFORCE_SIGNED_UPGRADE, value: '1'}
+- {name: BOOTLOADER_WRITE_DISABLE, value: '1'}
+- {name: APPLICATION_VERIFICATION_SKIP_EM4_RST, value: '1'}
+- {name: SLOT0_ENABLE, value: '1'}
+- condition: [device_sdid_210]
+  name: BOOTLOADER_VERSION_MAIN_CUSTOMER
+  value: '3'
+- condition: [device_sdid_235]
+  name: BOOTLOADER_VERSION_MAIN_CUSTOMER
+  value: '2'
+- {name: BOOTLOADER_FALLBACK_LEGACY_KEY, value: '1'}
+- {name: BOOTLOADER_SE_UPGRADE_NO_STAGING, value: '1'}
+- {name: BTL_STORAGE_BASE_ADDRESS, value: '134496256'}
+- condition: [device_sdid_210]
+  name: SLOT_OVERLAP_ENABLE
+  value: '1'
+- condition: [device_sdid_210]
+  name: SLOT1_ENABLE
+  value: '1'
+- condition: [device_sdid_210]
+  name: SLOT1_START
+  value: '134496256'
+- condition: [device_sdid_210]
+  name: SLOT1_SIZE
+  value: '180224'
+- condition: [device_sdid_210]
+  name: SLOT0_START
+  value: '134504448'
+- condition: [device_sdid_235]
+  name: SLOT0_START
+  value: '135028736'
+- {name: SLOT0_SIZE, value: '196608'}
+ui_hints: {}
+post_build:
+- {path: bootloader-storage-internal-single-zwave-ota_2.slpb, profile: zwave_bootloader}
+

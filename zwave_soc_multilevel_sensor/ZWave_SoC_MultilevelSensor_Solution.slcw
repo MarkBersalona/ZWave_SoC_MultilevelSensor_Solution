@@ -1,0 +1,19 @@
+---
+workspace_name: "ZWave_SoC_MultilevelSensor_Solution"
+label: "ZWave_SoC_MultilevelSensor_Solution"
+quality: "production"
+description: "Demonstrates Switch Multilevel Sensor application combined with OTA\
+  \ bootloader.  The Z-Wave Switch Multilevel Sensor application shows the ability\
+  \ to advertize  numerical sensor readings, such as temperature and humidity, and\
+  \ so on.  Multiple parameters can be set for the minimum and maximum values, and\
+  \ a  notification will be sent if the measured temperature value is out of the range.\n"
+project:
+- id: "application"
+  path: "zwave_soc_multilevel_sensor.slcp"
+  output: "."
+- id: "bootloader"
+  path: "..\\bootloader-storage-internal-single-zwave-ota_2\\bootloader-storage-internal-single-zwave-ota_2.slcp"
+  output: "../bootloader-storage-internal-single-zwave-ota_2"
+post_build:
+  profile: "zwave_workspace"
+  path: "ZWave_SoC_MultilevelSensor_Solution.slpb"
