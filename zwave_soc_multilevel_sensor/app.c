@@ -42,6 +42,7 @@
 #endif
 
 #include "app_hw.h"
+#include <stdio.h>
 
 void ApplicationTask(SApplicationHandles* pAppHandles);
 
@@ -118,6 +119,114 @@ ApplicationTask(SApplicationHandles* pAppHandles)
   ZAF_PrintAppInfo();
 
   app_hw_init();
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /// TEST MAB 2025.12.29
+  /// Display DSK over serial port
+  /// (see zw_cli_common.c, cli_get_dsk() for CLI routine for displaying DSK)
+  // DSK starts from the 13th byte in the QR code
+  #define SL_CLI_COMMON_DSK_START_INDEX   12
+  #define SL_CLI_COMMON_DSK_LEN_CHAR      40
+  #define SL_CLI_DSK_CHUNK_LEN_CHAR       5
+  char qr_code[TOKEN_MFG_ZW_QR_CODE_SIZE];
+  char qr_code_print_buffer[TOKEN_MFG_ZW_QR_CODE_SIZE + 7 /*we put - after every 5th char*/];
+  char lucIntegerString[10];
+  char lucDSKHexString[50];
+  char lucNWIHomeIDString[50];
+  char lucAuthHomeIDString[50];
+  uint16_t luiTempDSKInt;
+  uint16_t luiTempNWIHomeIDInt;
+  uint16_t luiTempAuthHomeIDInt;
+
+  memset(qr_code, 0, sizeof(qr_code));
+  memset(qr_code_print_buffer, 0, sizeof(qr_code_print_buffer));
+  memset(lucDSKHexString, 0, sizeof(lucDSKHexString));
+  memset(lucNWIHomeIDString, 0, sizeof(lucNWIHomeIDString));
+  memset(lucAuthHomeIDString, 0, sizeof(lucAuthHomeIDString));
+
+  ZW_GetMfgTokenData(&qr_code, TOKEN_MFG_ZW_QR_CODE_ID, TOKEN_MFG_ZW_QR_CODE_SIZE);
+  ZPAL_LOG_INFO(ZPAL_LOG_APP, "%s: \n", __FUNCTION__);
+  ZPAL_LOG_INFO(ZPAL_LOG_APP, "%s:     QR code = %s\n", __FUNCTION__, qr_code);
+
+  for (uint8_t i = SL_CLI_COMMON_DSK_START_INDEX; i < SL_CLI_COMMON_DSK_START_INDEX + SL_CLI_COMMON_DSK_LEN_CHAR; i += 5)
+  {
+    // Debug display hex value of 5-digit number string
+    memset(lucIntegerString, 0, sizeof(lucIntegerString));
+    memcpy(lucIntegerString, &qr_code[i], SL_CLI_DSK_CHUNK_LEN_CHAR);
+    luiTempDSKInt = atoi(lucIntegerString);
+    //ZPAL_LOG_INFO(ZPAL_LOG_APP, "%s: %05d = 0x%04X\n", __FUNCTION__, luiTempDSKInt, luiTempDSKInt);
+    strcat(qr_code_print_buffer, lucIntegerString);
+    memset(lucIntegerString, 0, sizeof(lucIntegerString));
+    snprintf(lucIntegerString, 5, "%04X", luiTempDSKInt); // 4 hex digits plus NULL, apparently...
+    strcat(lucDSKHexString, lucIntegerString);
+
+    //if (i < (SL_CLI_COMMON_DSK_START_INDEX + SL_CLI_COMMON_DSK_LEN_CHAR) - SL_CLI_DSK_CHUNK_LEN_CHAR) {
+    if (i <= (SL_CLI_COMMON_DSK_START_INDEX + SL_CLI_COMMON_DSK_LEN_CHAR) - SL_CLI_DSK_CHUNK_LEN_CHAR) {
+        if (i < (SL_CLI_COMMON_DSK_START_INDEX + SL_CLI_COMMON_DSK_LEN_CHAR) - SL_CLI_DSK_CHUNK_LEN_CHAR)
+          {
+            strcat(qr_code_print_buffer, "-");
+            strcat(lucDSKHexString, "  ");
+          }
+
+        // Process NWI HomeID
+        if ( i == (SL_CLI_COMMON_DSK_START_INDEX + 4*SL_CLI_DSK_CHUNK_LEN_CHAR) )
+          {
+            luiTempNWIHomeIDInt = luiTempDSKInt | 0xC000;
+            memset(lucIntegerString, 0, sizeof(lucIntegerString));
+            snprintf(lucIntegerString, 5, "%04X", luiTempNWIHomeIDInt); // 4 hex digits plus NULL, apparently...
+            strcat(lucNWIHomeIDString, lucIntegerString);
+            strcat(lucNWIHomeIDString, "  ");
+          }
+        else if ( i == (SL_CLI_COMMON_DSK_START_INDEX + 5*SL_CLI_DSK_CHUNK_LEN_CHAR) )
+          {
+            luiTempNWIHomeIDInt = luiTempDSKInt & 0xFFFE;
+            memset(lucIntegerString, 0, sizeof(lucIntegerString));
+            snprintf(lucIntegerString, 5, "%04X", luiTempNWIHomeIDInt); // 4 hex digits plus NULL, apparently...
+            strcat(lucNWIHomeIDString, lucIntegerString);
+            strcat(lucNWIHomeIDString, "  ");
+          }
+        else if ( i == (SL_CLI_COMMON_DSK_START_INDEX + 7*SL_CLI_DSK_CHUNK_LEN_CHAR) )
+          {
+            //strcat(lucNWIHomeIDString, "....");
+            strcat(lucNWIHomeIDString, "    ");
+          }
+        else
+          {
+            //strcat(lucNWIHomeIDString, "....  ");
+            strcat(lucNWIHomeIDString, "      ");
+          }
+
+        // Process Auth HomeID
+        if ( i == (SL_CLI_COMMON_DSK_START_INDEX + 6*SL_CLI_DSK_CHUNK_LEN_CHAR) )
+          {
+            luiTempAuthHomeIDInt = luiTempDSKInt | 0xC000;
+            memset(lucIntegerString, 0, sizeof(lucIntegerString));
+            snprintf(lucIntegerString, 5, "%04X", luiTempAuthHomeIDInt); // 4 hex digits plus NULL, apparently...
+            strcat(lucAuthHomeIDString, lucIntegerString);
+            strcat(lucAuthHomeIDString, "  ");
+          }
+        else if ( i == (SL_CLI_COMMON_DSK_START_INDEX + 7*SL_CLI_DSK_CHUNK_LEN_CHAR) )
+          {
+            luiTempNWIHomeIDInt = luiTempDSKInt & 0xFFFE;
+            memset(lucIntegerString, 0, sizeof(lucIntegerString));
+            snprintf(lucIntegerString, 5, "%04X", luiTempNWIHomeIDInt); // 4 hex digits plus NULL, apparently...
+            strcat(lucAuthHomeIDString, lucIntegerString);
+            strcat(lucAuthHomeIDString, "  ");
+          }
+        else
+          {
+            //strcat(lucAuthHomeIDString, "....  ");
+            strcat(lucAuthHomeIDString, "      ");
+          }
+    }
+  }
+
+  ZPAL_LOG_INFO(ZPAL_LOG_APP, "%s:   \n", __FUNCTION__);
+  ZPAL_LOG_INFO(ZPAL_LOG_APP, "%s:         DSK = %s\n", __FUNCTION__, qr_code_print_buffer);
+  ZPAL_LOG_INFO(ZPAL_LOG_APP, "%s:     DSK hex = %s\n", __FUNCTION__, lucDSKHexString);
+  ZPAL_LOG_INFO(ZPAL_LOG_APP, "%s:  NWI HomeID = %s\n", __FUNCTION__, lucNWIHomeIDString);
+  ZPAL_LOG_INFO(ZPAL_LOG_APP, "%s: Auth HomeID = %s\n", __FUNCTION__, lucAuthHomeIDString);
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   resetReason = GetResetReason();
 
